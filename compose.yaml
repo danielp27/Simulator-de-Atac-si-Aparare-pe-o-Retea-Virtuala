@@ -44,7 +44,6 @@ services:
   evebox:
     image: jasonish/evebox:latest
     container_name: evebox
-    restart: unless-stopped
     ports:
       - "5636:5636"
     volumes:
